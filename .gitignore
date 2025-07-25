@@ -1,0 +1,19 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+.DS_Store
+.quarto
+Campus Communications/
+Data/
+Documenting FY24 process updates/
+Test/
+To campuses/
+Uploads/
+.boxnote
+*.xls
+*.xlsx
+*.csv
+*.docx
+test-git
+.RDataTmp
