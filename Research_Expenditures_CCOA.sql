@@ -1,5 +1,7 @@
 with a as
 (
+#This first subquery pulls data for all the campuses. There is one join to bring in the UCSB prime sponsor (check to see if this is fixed for FY2025)
+#In FY2024 UCSB only had the direct sponsor.
 (select
 effective_gl_date, 
 amount, 
@@ -54,18 +56,8 @@ activity,
 financial_statement_acct_category, 
 fiscal_year,
 fund_id, 
---UCI and UCD sponsor codes are reversed between prime and direct. Check in FY2025 if this has been fixed.
-trim(case 
-      when entity_level_a_description in ('Santa Barbara','Irvine') and (prime_sponsor_id=direct_sponsor_id or prime_sponsor_id='') then c.orig_sponsor_code 
-      when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then direct_sponsor_id 
-      when entity_level_a_description in ('Davis') then direct_sponsor_id 
-      else prime_sponsor_id 
-      end) as prime_sponsor_id, 
-CASE 
-  when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then prime_sponsor_id
-  when entity_level_a_description in ('Davis') then prime_sponsor_id
-  else direct_sponsor_id
-end as direct_sponsor_id, 
+prime_sponsor_id, 
+direct_sponsor_id, 
 project_type, 
 federal_flow_through_code, 
 indirect_cost_base, 
@@ -82,56 +74,18 @@ award_federal_arra_flag,
 nsf_id, 
 nsf_description, 
 spx_project_id, 
---UCI and UCD sponsor codes are reversed between prime and direct. Check in FY2025 if this has been fixed.
-CASE 
-  when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_id_p
-  when entity_level_a_description in ('Davis') then sponsor_id_p
-  else sponsor_id_d
-END as sponsor_id_d, 
-CASE 
-  when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_description_p
-  when entity_level_a_description in ('Davis') then sponsor_description_p
-  else sponsor_description_d
-END as sponsor_description_d,
-CASE 
-  when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_category_p
-  when entity_level_a_description in ('Davis') then sponsor_category_p
-  else sponsor_category_d
-  end as sponsor_category_d,
-case 
-  when
-    (case
-      when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then foreign_domestic_flag_p 
-      when entity_level_a_description in ('Davis') then foreign_domestic_flag_p 
-      else sponsor_foreign_domestic_flag_d
-    end) in ('Y','F') then 'Y'
-    else '' END
-as sponsor_foreign_domestic_flag_d, 
---UCI sponsor codes are reversed between prime and direct. Check in FY2025 if this has been fixed.
-trim(case 
-      when entity_level_a_description in ('Santa Barbara','Irvine') and  (prime_sponsor_id=direct_sponsor_id or prime_sponsor_id='') then orig_sponsor_code
-      when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_id_d 
-      when entity_level_a_description in ('Davis') then sponsor_id_d       
-      else sponsor_id_p 
-      end) as sponsor_id_p,
-trim(case 
-        when entity_level_a_description in ('Santa Barbara','Irvine') and (prime_sponsor_id=direct_sponsor_id or prime_sponsor_id='') then orig_sponsor_desc 
-        when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_description_d
-        when entity_level_a_description in ('Davis') then sponsor_description_d
-        else sponsor_description_p end) as sponsor_description_p, 
-case 
-  when entity_level_a_description in ('Santa Barbara','Irvine') and (prime_sponsor_id=direct_sponsor_id or prime_sponsor_id='') then orig_sponsor_cat_code 
-  when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_category_d
-  when entity_level_a_description in ('Davis') then sponsor_category_d  
-  else sponsor_category_p end as sponsor_category_p,
+sponsor_id_d, 
+sponsor_description_d,
+sponsor_category_d,
+#Check to see if we still need to account for both Y and F
+sponsor_foreign_domestic_flag_d, 
+sponsor_id_p,
+sponsor_description_p, 
+sponsor_category_p,
+#Check to see if we still need to account for both Y and F
 case 
   when 
-  (case 
-    when entity_level_a_description in ('Santa Barbara','Irvine') and (prime_sponsor_id=direct_sponsor_id or prime_sponsor_id='') then orig_sponsor_foreign 
-    when entity_level_a_description in ('Irvine') and sponsor_category_d!='14' then sponsor_foreign_domestic_flag_d 
-    when entity_level_a_description in ('Davis') then sponsor_foreign_domestic_flag_d 
-    else foreign_domestic_flag_p 
-    end) in ('Y','F')
+  foreign_domestic_flag_p in ('Y','F')
   then 'Y'
   else ''
   end as foreign_domestic_flag_p,
@@ -143,8 +97,9 @@ left join
 	ucop_irap.ucsb_prime c
 	on a.award_id=c.award_id
 	and a.entity_level_a_description=c.location
-where accounting_period='2024YE')
+where accounting_period in ('2024YE','2025YE')
 UNION
+#Second subquery is the supplemental data for UCM
 (select
 effective_gl_date, 
 b.amount,
@@ -238,9 +193,10 @@ coalesce(nullif(department_level_e_code,''), nullif(department_level_d_code,''),
 a.function_id=b.function_id AND
 a.program_level_b_code=b.program_id and
 	a.project_id=b.project_id 
-where accounting_period='2024YE'
+where accounting_period in ('2024YE','2025YE')
 )
 UNION
+#Third subquery is the supplemental data for UCSD
 (SELECT 
 null as effective_gl_date, 
 amount,
@@ -293,7 +249,7 @@ null as project_description,
 null as sub_account, 
 null as activity, 
 null as financial_statement_acct_category, 
-2024 as fiscal_year,
+2025 as fiscal_year,
 null as fund_id, 
 prime_sponsor_id, 
 direct_sponsor_id, 
@@ -321,7 +277,7 @@ sponsor_id_p,
 sponsor_description_p, 
 sponsor_category_p,
 foreign_domestic_flag_p,
-'2024YE' as accounting_period,
+'2025YE' as accounting_period,
 'San Diego' as source,
 exclude_mtdc
 FROM "ucop_irap"."ucsd_supp" a
@@ -329,21 +285,21 @@ left join
 (select distinct sponsor_id_d, sponsor_description_d, sponsor_category_d, sponsor_foreign_domestic_flag_d, sponsor_id_p, sponsor_description_p, sponsor_category_p, foreign_domestic_flag_p, project_id as project_id_x, federal_flow_through_code, on_campus_flag,sponsor_id_p as prime_sponsor_id, sponsor_id_d as direct_sponsor_id 
 from fdw_prod_warehouse.gl_balances_ex 
 where entity_level_c_code='1611' 
-and accounting_period='2024YE'
+and accounting_period='2025YE'
 and financial_statement_acct_category='E') b
 on a.project_id=b.project_id_x 
 left join
 (select distinct account_level_a_code, account_level_b_code, account_level_c_code, account_level_d_code as account_level_d_code
 from fdw_prod_warehouse.gl_balances_ex  
 where entity_level_c_code='1611' 
-and accounting_period='2024YE'
+and accounting_period='2025YE'
 and financial_statement_acct_category='E') c
 on a.account_id=c.account_level_d_code
 left join
 (select distinct fund_level_a_code, fund_level_b_code, fund_level_c_code, fund_level_d_code as fund_level_d_code
 from fdw_prod_warehouse.gl_balances_ex  
 where entity_level_c_code='1611' 
-and accounting_period='2024YE'
+and accounting_period='2025YE'
 and financial_statement_acct_category='E') d
 on a.fund_id=d.fund_level_d_code)
 )
