@@ -1,7 +1,6 @@
 with a as
 (
-#This first subquery pulls data for all the campuses. There is one join to bring in the UCSB prime sponsor (check to see if this is fixed for FY2025)
-#In FY2024 UCSB only had the direct sponsor.
+#This first subquery pulls data for all the campuses. 
 (select
 effective_gl_date, 
 amount, 
@@ -77,26 +76,15 @@ spx_project_id,
 sponsor_id_d, 
 sponsor_description_d,
 sponsor_category_d,
-#Check to see if we still need to account for both Y and F
 sponsor_foreign_domestic_flag_d, 
 sponsor_id_p,
 sponsor_description_p, 
 sponsor_category_p,
-#Check to see if we still need to account for both Y and F
-case 
-  when 
-  foreign_domestic_flag_p in ('Y','F')
-  then 'Y'
-  else ''
-  end as foreign_domestic_flag_p,
+foreign_domestic_flag_p,
 accounting_period,
 'All' as source,
 '' as exclude_mtdc
 from fdw_prod_warehouse.gl_balances_ex a 
-left join
-	ucop_irap.ucsb_prime c
-	on a.award_id=c.award_id
-	and a.entity_level_a_description=c.location
 where accounting_period in ('2024YE','2025YE')
 UNION
 #Second subquery is the supplemental data for UCM
@@ -486,7 +474,7 @@ CASE
 FROM
 	a
 LEFT JOIN
-	ucop_irap.nsf_supp_fy2024 b
+	ucop_irap.nsf_supp_fy2025 b
   	on 
         a.entity_level_c_code=b.entity_id AND
         a.account_level_e_code=b.account_id AND
@@ -502,7 +490,7 @@ LEFT JOIN
 
 --Supplemental for UCSF only, just based on project code
 LEFT JOIN
-  (select * from ucop_irap.nsf_supp_fy2024 where entity_id='1211') c
+  (select * from ucop_irap.nsf_supp_fy2025 where entity_id='1211') c
     on
       a.entity_level_c_code=c.entity_id AND
     	a.project_id=c.project_id 
@@ -517,8 +505,8 @@ case
 end=d.fund
 
 WHERE
-accounting_period = '2024YE'
-AND entity_level_a_description in ('Berkeley')
+accounting_period = '2025YE'
+--AND entity_level_a_description in ('Berkeley')
 AND 
 (
     (
@@ -546,6 +534,7 @@ AND
 		--OR (a.function_id='44' and (account_level_d_code like '7250%' or account_level_d_code like '7251%') AND NOT fund_level_b_code IN ('2400B','2600B','2630B','3000B','3100B','3200B','4000B','5000B'))
 		)
 	--Added to account for anomalous IDC recording at these campuses
+	--Needs to be updated for FY2025
 	OR (entity_level_a_description='Berkeley' AND financial_statement_acct_category='E' AND account_level_c_code='53800C' AND a.function_id='80' AND a.project_id<>'')
 	OR (entity_level_a_description='Riverside' AND financial_statement_acct_category='E' AND account_level_c_code='53800C' AND a.function_id='80' AND a.project_id<>'0000000000')
 	OR (entity_level_a_description='Santa Cruz' AND financial_statement_acct_category='E' AND account_level_c_code='53810C' AND a.function_id='44')
