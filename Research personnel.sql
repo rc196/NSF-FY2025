@@ -29,7 +29,7 @@ on b.jobcode=cto.jobcode
 left join HCM_ODS.PS_UC_HR_SELF_ID self
 on s.emplid=self.emplid
 where
-s.run_id between '2307' and '2406ZZZ'
+s.run_id between '2407' and '2506ZZZ'
 and m.UC_FUNCTION_CD='44'
 group by
   s.business_unit, 

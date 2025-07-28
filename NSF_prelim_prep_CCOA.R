@@ -49,7 +49,7 @@ sicr_ccoa <- read_excel("Data/Input-sicr.xlsx",sheet="Campuses_CCOA") %>% as_tib
 cost_sharing <- read_excel ("Data/cost-share.xlsx") %>% as_tibble()
 
 #The proportion of awards by category of research, used to prorate the research expenditures
-award_category <- read_excel("Data/FY2023-awards.xlsx") %>% as_tibble()
+award_category <- read_excel("Data/FY2024-awards.xlsx") %>% as_tibble()
 award_category<-rename(award_category,location=LOCATION,federal_sponsorship=FEDERAL_SPONSORSHIP,project_category=PROJECT_CATEGORY)
 award_category[is.na(award_category)] <- ""
 
@@ -75,7 +75,7 @@ expenditures_raw <- sqlQuery(awscnxn,exp_query,as.is=c(TRUE,TRUE,TRUE,TRUE,TRUE,
 
 
 expenditures_ccoa<-expenditures_raw %>%  as_tibble()
-expenditures_ccoa$fiscal_year<-2024
+expenditures_ccoa$fiscal_year<-2025
 
 # UCSD Exclusions
 expenditures_ccoa <- left_join(expenditures_ccoa, ucsd_excl_dept, by = c('location','department_id')) 

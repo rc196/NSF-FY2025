@@ -25,7 +25,7 @@ FROM
         sum(QUARTERLY_AWARD_AMOUNT) as project_type_sum
         FROM IRAP_BI.AWARD_DM
         WHERE
-        UC_FISCAL_YEAR = 2023
+        UC_FISCAL_YEAR = 2024
         AND PROJECT_TYPE_CODE IN ('1','2','3','4','A')
         GROUP BY 
                 CASE 
@@ -57,7 +57,7 @@ FROM
         FROM IRAP_BI.AWARD_DM
 
         WHERE
-        UC_FISCAL_YEAR = 2023
+        UC_FISCAL_YEAR = 2024
         AND PROJECT_TYPE_CODE IN ('1','2','3','4','A')
                 GROUP BY 
                 CASE 
